@@ -48,13 +48,64 @@ export default class Block {
     }
 
     shouldRenderFace(world, x, y, z, face) {
+        let boundingBox = this.getBoundingBox(world, x, y, z);
+        if (!this.isFaceAtBlockBoundary(face, boundingBox)) {
+            return true;
+        }
+
         let typeId = world.getBlockAtFace(x, y, z, face);
         if (typeId === 0) {
             return true;
         }
 
         let block = Block.getById(typeId);
-        return block === null || block.isTranslucent();
+        return block === null || block.isTranslucent() || !block.coversFace(face.opposite(), boundingBox);
+    }
+
+    isFaceAtBlockBoundary(face, boundingBox = this.boundingBox) {
+        if (face === EnumBlockFace.TOP) {
+            return boundingBox.maxY === 1.0;
+        }
+        if (face === EnumBlockFace.BOTTOM) {
+            return boundingBox.minY === 0.0;
+        }
+        if (face === EnumBlockFace.NORTH) {
+            return boundingBox.minZ === 0.0;
+        }
+        if (face === EnumBlockFace.SOUTH) {
+            return boundingBox.maxZ === 1.0;
+        }
+        if (face === EnumBlockFace.WEST) {
+            return boundingBox.minX === 0.0;
+        }
+        if (face === EnumBlockFace.EAST) {
+            return boundingBox.maxX === 1.0;
+        }
+        return false;
+    }
+
+    coversFace(face, targetBoundingBox) {
+        if (!this.isFaceAtBlockBoundary(face)) {
+            return false;
+        }
+
+        if (face.isYAxis()) {
+            return this.coversRange(this.boundingBox.minX, this.boundingBox.maxX, targetBoundingBox.minX, targetBoundingBox.maxX)
+                && this.coversRange(this.boundingBox.minZ, this.boundingBox.maxZ, targetBoundingBox.minZ, targetBoundingBox.maxZ);
+        }
+        if (face.isXAxis()) {
+            return this.coversRange(this.boundingBox.minY, this.boundingBox.maxY, targetBoundingBox.minY, targetBoundingBox.maxY)
+                && this.coversRange(this.boundingBox.minZ, this.boundingBox.maxZ, targetBoundingBox.minZ, targetBoundingBox.maxZ);
+        }
+        if (face.isZAxis()) {
+            return this.coversRange(this.boundingBox.minX, this.boundingBox.maxX, targetBoundingBox.minX, targetBoundingBox.maxX)
+                && this.coversRange(this.boundingBox.minY, this.boundingBox.maxY, targetBoundingBox.minY, targetBoundingBox.maxY);
+        }
+        return false;
+    }
+
+    coversRange(min, max, targetMin, targetMax) {
+        return min <= targetMin && max >= targetMax;
     }
 
     getColor(world, x, y, z, face) {

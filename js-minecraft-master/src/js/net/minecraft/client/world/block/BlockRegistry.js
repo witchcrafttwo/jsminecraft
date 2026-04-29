@@ -20,6 +20,8 @@ import Blockpillar from "./type/Blockpillar.js";
 import BlockLadder from "./type/BlockLadder.js";
 import Blockyellow from "./type/Blockyellow.js";
 import BlockBlackGlass from "./type/BlockBlackGlass.js";
+import Blockdarkork from "./type/Blockdarkork.js";
+import BlockWhiteTorch from "./type/BlockWhiteTorch.js";
 export class BlockRegistry {
 
     static create() {
@@ -52,6 +54,7 @@ export class BlockRegistry {
         BlockRegistry.Ladder = new BlockLadder(39, 19);
         BlockRegistry.YELLOW = new Blockyellow(40, 18);
         BlockRegistry.BLACKGLASS = new BlockBlackGlass(41,20);
-
+        BlockRegistry.DARKORK = new Blockdarkork(42,21);
+        BlockRegistry.WHITETORCH = new BlockWhiteTorch(43,22);
     }
 }

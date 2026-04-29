@@ -83,8 +83,14 @@ export default class World {
         for (let x = minX; x < maxX; x++) {
             for (let y = minY; y < maxY; y++) {
                 for (let z = minZ; z < maxZ; z++) {
-                    if (this.isSolidBlockAt(x, y, z)) {
-                        boundingBoxList.push(new BoundingBox(x, y, z, x + 1, y + 1, z + 1));
+                    let typeId = this.getBlockAt(x, y, z);
+                    if (typeId === 0) {
+                        continue;
+                    }
+
+                    let block = Block.getById(typeId);
+                    if (block !== null && block.isSolid()) {
+                        boundingBoxList.push(block.getBoundingBox(this, x, y, z).offset(x, y, z));
                     }
                 }
             }
