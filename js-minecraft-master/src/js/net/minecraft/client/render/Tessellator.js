@@ -7,6 +7,8 @@ export default class Tessellator {
             side: THREE.FrontSide,
             transparent: true,
             depthTest: true,
+            depthWrite: true,
+            alphaTest: 0.1,
             vertexColors: true
         });
 
@@ -80,7 +82,7 @@ export default class Tessellator {
         }
     }
 
-    draw(group) {
+    draw(group, options = {}) {
         let geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(this.vertices), 3));
         geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(this.colors), 4));
@@ -101,7 +103,15 @@ export default class Tessellator {
         }
         geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(index), 1));
 
-        let mesh = new THREE.Mesh(geometry, this.material);
+        let renderOrder = options.renderOrder ?? 0;
+        let materialOptions = Object.assign({}, options);
+        let material = this.material.clone();
+
+        delete materialOptions.renderOrder;
+        Object.assign(material, materialOptions);
+
+        let mesh = new THREE.Mesh(geometry, material);
+        mesh.renderOrder = renderOrder;
         group.matrixAutoUpdate = false;
         group.add(mesh);
         return mesh;

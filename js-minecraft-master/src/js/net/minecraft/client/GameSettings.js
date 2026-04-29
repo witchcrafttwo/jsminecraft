@@ -45,6 +45,8 @@ export default class GameSettings {
                 }
             }
         }
+
+        this.viewDistance = Math.min(Math.max(parseInt(this.viewDistance) || 4, 2), 16);
     }
 
     save() {

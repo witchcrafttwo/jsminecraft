@@ -305,24 +305,16 @@ export default class Minecraft {
 
         // Update loading progress
         if (this.loadingScreen !== null && this.isInGame()) {
-            let cameraChunkX = Math.floor(this.player.x) >> 4;
-            let cameraChunkZ = Math.floor(this.player.z) >> 4;
+            let initialRenderDistance = Math.min(this.settings.viewDistance, 2);
+            let requiredChunks = this.isSingleplayer() ? Math.pow(initialRenderDistance * 2 - 1, 2) : 1;
 
-            let renderDistance = this.settings.viewDistance;
-            let requiredChunks = this.isSingleplayer() ? Math.pow(renderDistance * 2 - 1, 2) : 1;
-            let loadedChunks = this.world.getChunkProvider().getChunks().size;
-
-            // Load chunks and count
-            setTimeout(() => {
-                for (let x = -renderDistance + 1; x < renderDistance; x++) {
-                    for (let z = -renderDistance + 1; z < renderDistance; z++) {
-                        this.world.getChunkAt(cameraChunkX + x, cameraChunkZ + z);
-                    }
-                }
-            }, 0);
+            // Load enough chunks to enter the world quickly. The full render distance
+            // continues loading gradually after the loading screen closes.
+            this.worldRenderer.loadRenderDistanceChunks(3, initialRenderDistance);
+            let loadedChunks = this.worldRenderer.countLoadedRenderDistanceChunks(initialRenderDistance);
 
             // Update progress
-            let progress = 1 / requiredChunks * Math.max(0, loadedChunks - this.world.lightUpdateQueue.length / 1000);
+            let progress = 1 / requiredChunks * loadedChunks;
             this.loadingScreen.setProgress(progress);
 
             // Finish loading

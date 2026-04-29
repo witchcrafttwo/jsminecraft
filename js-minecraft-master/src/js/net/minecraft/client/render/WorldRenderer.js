@@ -44,9 +44,6 @@ export default class WorldRenderer {
         this.prevEquippedProgress = 0;
         this.itemToRender = 0;
 
-        this.prevFogBrightness = 0;
-        this.fogBrightness = 0;
-
         this.flushRebuild = false;
 
         this.lastHitResult = null;
@@ -87,7 +84,7 @@ export default class WorldRenderer {
         this.webRenderer.shadowMap.enabled = true;
         this.webRenderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
         this.webRenderer.autoClear = false;
-        this.webRenderer.sortObjects = false;
+        this.webRenderer.sortObjects = true;
         this.webRenderer.setClearColor(0x000000, 0);
         this.webRenderer.clear();
 
@@ -154,6 +151,10 @@ export default class WorldRenderer {
     }
 
     onTick() {
+        if (this.minecraft.isInGame() && this.minecraft.loadingScreen === null) {
+            this.loadRenderDistanceChunks(2);
+        }
+
         // Rebuild 2 chunk sections each tick
         for (let i = 0; i < 2; i++) {
             if (this.chunkSectionUpdateQueue.length !== 0) {
@@ -165,7 +166,6 @@ export default class WorldRenderer {
             }
         }
 
-        this.prevFogBrightness = this.fogBrightness;
         this.prevEquippedProgress = this.equippedProgress;
 
         let player = this.minecraft.player;
@@ -189,11 +189,68 @@ export default class WorldRenderer {
             this.itemToRender = itemStack;
         }
 
-        // Update fog brightness
-        let brightnessAtPosition = this.minecraft.world.getLightBrightnessForEntity(player);
-        let renderDistance = this.minecraft.settings.viewDistance / 32.0;
-        let fogBrightness = brightnessAtPosition * (1.0 - renderDistance) + renderDistance;
-        this.fogBrightness += (fogBrightness - this.fogBrightness) * 0.1;
+    }
+
+    loadRenderDistanceChunks(maxChunks = 8, renderDistance = this.minecraft.settings.viewDistance) {
+        let world = this.minecraft.world;
+        let player = this.minecraft.player;
+        if (world === null || player === null) {
+            return;
+        }
+
+        let centerChunkX = Math.floor(player.x) >> 4;
+        let centerChunkZ = Math.floor(player.z) >> 4;
+        let missingChunks = [];
+
+        for (let x = -renderDistance + 1; x < renderDistance; x++) {
+            for (let z = -renderDistance + 1; z < renderDistance; z++) {
+                let chunkX = centerChunkX + x;
+                let chunkZ = centerChunkZ + z;
+
+                if (!world.chunkExists(chunkX, chunkZ)) {
+                    missingChunks.push({
+                        x: chunkX,
+                        z: chunkZ,
+                        distance: x * x + z * z
+                    });
+                }
+            }
+        }
+
+        missingChunks.sort((a, b) => a.distance - b.distance);
+
+        for (let i = 0; i < Math.min(maxChunks, missingChunks.length); i++) {
+            let chunk = missingChunks[i];
+            world.getChunkAt(chunk.x, chunk.z);
+        }
+    }
+
+    countLoadedRenderDistanceChunks(renderDistance) {
+        let world = this.minecraft.world;
+        let player = this.minecraft.player;
+        if (world === null || player === null) {
+            return 0;
+        }
+
+        let centerChunkX = Math.floor(player.x) >> 4;
+        let centerChunkZ = Math.floor(player.z) >> 4;
+        let loadedChunks = 0;
+
+        for (let x = -renderDistance + 1; x < renderDistance; x++) {
+            for (let z = -renderDistance + 1; z < renderDistance; z++) {
+                if (world.chunkExists(centerChunkX + x, centerChunkZ + z)) {
+                    loadedChunks++;
+                }
+            }
+        }
+
+        return loadedChunks;
+    }
+
+    onRenderDistanceChanged() {
+        this.loadRenderDistanceChunks(4);
+        this.rebuildAll();
+        this.flushRebuild = true;
     }
 
     orientCamera(partialTicks) {
@@ -509,17 +566,15 @@ export default class WorldRenderer {
             let sunsetColor = world.getSunriseSunsetColor(partialTicks);
 
             let starBrightness = world.getStarBrightness(partialTicks);
-            let brightness = this.prevFogBrightness + (this.fogBrightness - this.prevFogBrightness) * partialTicks;
-
-            let red = (fogColor.x + (skyColor.x - fogColor.x) * viewFactor) * brightness;
-            let green = (fogColor.y + (skyColor.y - fogColor.y) * viewFactor) * brightness;
-            let blue = (fogColor.z + (skyColor.z - fogColor.z) * viewFactor) * brightness;
+            let red = fogColor.x + (skyColor.x - fogColor.x) * viewFactor;
+            let green = fogColor.y + (skyColor.y - fogColor.y) * viewFactor;
+            let blue = fogColor.z + (skyColor.z - fogColor.z) * viewFactor;
 
             // Update background color
             this.background.background = new THREE.Color(red, green, blue);
 
             // Update fog color
-            this.scene.fog = new THREE.Fog(new THREE.Color(red, green, blue), 0.0025, viewDistance * 2);
+            this.scene.fog = new THREE.Fog(new THREE.Color(red, green, blue), viewDistance * 0.25, viewDistance * 2);
 
             let skyMesh = this.listSky.children[0];
             let voidMesh = this.listVoid.children[0];

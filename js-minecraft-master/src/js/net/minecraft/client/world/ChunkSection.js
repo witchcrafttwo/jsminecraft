@@ -76,8 +76,18 @@ export default class ChunkSection {
                 }
             }
 
-            // Draw chunk section
-            tessellator.draw(this.group);
+            // Draw chunk section. Opaque blocks write depth; translucent blocks blend after them.
+            tessellator.draw(this.group, isTranslucentRenderPhase ? {
+                transparent: true,
+                depthWrite: false,
+                alphaTest: 0.1,
+                renderOrder: 1
+            } : {
+                transparent: false,
+                depthWrite: true,
+                alphaTest: 0.1,
+                renderOrder: 0
+            });
         }
     }
 
@@ -127,7 +137,7 @@ export default class ChunkSection {
         if (blockLight > skyLight) {
             skyLight = blockLight;
         }
-        return skyLight;
+        return Math.max(skyLight, 0);
     }
 
     getLightAt(sourceType, x, y, z) {

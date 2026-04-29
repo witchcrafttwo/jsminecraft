@@ -23,6 +23,7 @@ export default class World {
 
         this.lightUpdateQueue = [];
         this.chunkProvider = null;
+        this.skylightSubtracted = 0;
 
         this.time = 0;
         this.spawn = new Vector3(0, 0, 0);
@@ -30,7 +31,7 @@ export default class World {
         // Update lights async
         let scope = this;
         setInterval(function () {
-            let i = scope.minecraft.loadingScreen === null ? 1000 : 100000;
+            let i = 200;
             while (scope.lightUpdateQueue.length >= 10 && i > 0) {
                 i--;
                 scope.lightUpdateQueue.shift().updateBlockLightning(scope);
@@ -595,11 +596,12 @@ export default class World {
         this.spawn = new Vector3(x, y + 8, z);
     }
 
-    loadSpawnChunks() {
-        let viewDistance = this.minecraft.settings.viewDistance;
-        for (let x = -viewDistance; x <= viewDistance; x++) {
-            for (let z = -viewDistance; z <= viewDistance; z++) {
-                this.getChunkAt(x + this.spawn.x >> 4, z + this.spawn.z >> 4);
+    loadSpawnChunks(radius = 2) {
+        let spawnChunkX = this.spawn.x >> 4;
+        let spawnChunkZ = this.spawn.z >> 4;
+        for (let x = -radius; x <= radius; x++) {
+            for (let z = -radius; z <= radius; z++) {
+                this.getChunkAt(spawnChunkX + x, spawnChunkZ + z);
             }
         }
         this.spawn.y = this.getHeightAt(this.spawn.x, this.spawn.z) + 8;

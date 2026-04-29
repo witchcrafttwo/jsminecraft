@@ -46,6 +46,7 @@ export default class GuiCreateWorld extends GuiScreen {
 
         // ブロック復元
         window.loadAllBlockStates(world, window.selectedSaveData.blocks);
+        window.selectedSaveData = null;
     } else {
         const world = new World(this.minecraft);
         world.setChunkProvider(new ChunkProviderGenerate(world, seed));

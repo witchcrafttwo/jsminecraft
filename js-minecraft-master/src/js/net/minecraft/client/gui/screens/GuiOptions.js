@@ -30,6 +30,9 @@ export default class GuiOptions extends GuiScreen {
         }));
         this.buttonList.push(new GuiSliderButton("Render Distance", settings.viewDistance, 2, 16, this.width / 2 - 100, y + 24 * 3, 200, 20, value => {
             settings.viewDistance = value;
+            if (this.minecraft.isInGame()) {
+                this.minecraft.worldRenderer.onRenderDistanceChanged();
+            }
         }));
         this.buttonList.push(new GuiButton("Controls...", this.width / 2 - 100, y + 24 * 4, 200, 20, () => {
             this.minecraft.displayScreen(new GuiControls(this));
