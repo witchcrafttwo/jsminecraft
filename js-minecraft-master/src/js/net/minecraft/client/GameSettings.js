@@ -15,7 +15,7 @@ export default class GameSettings {
         this.viewBobbing = true;
         this.ambientOcclusion = true;
         this.sensitivity = 100;
-        this.viewDistance = 4;
+        this.viewDistance = 5;
         this.debugOverlay = false;
         this.serverAddress = 'server.labystudio.de';
     }
@@ -46,7 +46,7 @@ export default class GameSettings {
             }
         }
 
-        this.viewDistance = Math.min(Math.max(parseInt(this.viewDistance) || 4, 2), 16);
+        this.viewDistance = Math.min(Math.max(parseInt(this.viewDistance) || 5, 2), 16);
     }
 
     save() {
